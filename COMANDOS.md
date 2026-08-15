@@ -1,12 +1,83 @@
 # Comandos úteis — logs, tabelas e consultas
 
-Guia rápido para validar a pipeline: ver logs, abrir o banco e consultar as
-tabelas. Cada item mostra o atalho via **`make`** e o **comando direto no
-terminal** (o que o `make` executa por baixo).
+Guia rápido para **usar a CLI** e **validar a pipeline**: rodar os comandos, ver
+logs, abrir o banco e consultar as tabelas. Cada item mostra o atalho via
+**`make`** e o **comando direto no terminal** (o que o `make` executa por baixo).
 
 > Pré-requisito: o Postgres precisa estar de pé (`make up` ou
 > `docker compose up -d postgres`). As credenciais abaixo (`crypto_user` /
 > `crypto`) são as do `.env.example`; ajuste se você mudou o `.env`.
+
+---
+
+## Como usar a CLI
+
+A forma geral é sempre:
+
+```
+python -m app <comando> [opções]
+```
+
+### Onde rodar (dois jeitos)
+
+| Jeito | Pré-requisito (1x) | Prefixo do comando |
+|-------|--------------------|--------------------|
+| Local (venv) | `make setup` | `.venv/bin/python -m app` |
+| Docker | `make up` | `docker compose run --rm app` |
+
+> O Docker é o mais fácil para usar `--database`, porque já traz Python,
+> dependências e a conexão com o banco prontos. O `python -m app` é a mesma coisa
+> rodando direto na sua máquina. Os exemplos abaixo usam o Docker; troque o
+> prefixo se preferir o venv.
+
+### Anatomia de um comando
+
+```
+docker compose run --rm app   download   --coin bitcoin   --date 2026-08-14   --database
+└──────── prefixo ──────────┘ └comando─┘ └──────────── opções (flags) ─────────────────┘
+```
+
+- **comando**: `download`, `backfill` ou `daily`
+- **flags**: começam com `--`; `--database` é um liga/desliga (sem valor)
+
+### Os 3 comandos
+
+```bash
+# 1) download — uma moeda, uma data
+docker compose run --rm app download --coin bitcoin --date 2026-08-14             # só o arquivo JSON
+docker compose run --rm app download --coin bitcoin --date 2026-08-14 --database  # arquivo + Postgres
+docker compose run --rm app download --coin ethereum --date yesterday --database  # 'yesterday' = ontem
+
+# 2) backfill — uma moeda, um intervalo de datas
+docker compose run --rm app backfill --coin bitcoin --start-date 2026-08-01 --end-date 2026-08-14 --database
+docker compose run --rm app backfill --coin bitcoin --start-date 2026-08-01 --end-date 2026-08-14 --workers 5 --database
+
+# 3) daily — as 3 moedas padrão (bitcoin/ethereum/cardano), uma data (feito p/ o cron)
+docker compose run --rm app daily --database                     # de ontem
+docker compose run --rm app daily --date 2026-08-10 --database   # de uma data específica
+```
+
+### O que você recebe (toda vez)
+
+1. **Logs** no terminal (passo a passo `INFO`).
+2. **Arquivo JSON** em `./data/<moeda>/<moeda>_<data>.json`.
+3. Com `--database`: linha em `crypto_history` + MIN/MAX em `crypto_monthly_stats`.
+4. A **última linha** é o resumo, ex.: `cardano 2026-08-13: price_usd=0.182... persisted=True`.
+
+### Ajuda embutida (não precisa decorar)
+
+```bash
+docker compose run --rm app --help            # lista os 3 comandos
+docker compose run --rm app backfill --help   # opções de um comando
+```
+
+### Fluxo típico do dia a dia
+
+```bash
+make up                                          # 1. sobe o banco (uma vez)
+docker compose run --rm app daily --database     # 2. roda a coleta
+make tables                                      # 3. confere o resultado
+```
 
 ---
 
