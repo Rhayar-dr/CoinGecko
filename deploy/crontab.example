@@ -1,0 +1,20 @@
+# CoinGecko daily extraction — runs every day at 03:00.
+#
+# Install with:  crontab deploy/crontab.example
+# (edit the absolute paths below to match your machine first).
+#
+# The `daily` command processes bitcoin, ethereum and cardano for "yesterday"
+# in a single invocation and persists everything to PostgreSQL.
+#
+# Fields: minute hour day-of-month month day-of-week  command
+
+# ---- Option A: run on the host with a virtualenv -----------------------------
+0 3 * * * cd /path/to/CoinGecko && /path/to/CoinGecko/.venv/bin/python -m app daily --database >> /var/log/coingecko.log 2>&1
+
+# ---- Option B: run via Docker Compose ----------------------------------------
+# 0 3 * * * cd /path/to/CoinGecko && /usr/bin/docker compose run --rm app daily --database >> /var/log/coingecko.log 2>&1
+
+# ---- Option C: one line per coin (equivalent, more explicit) -----------------
+# 0 3 * * * cd /path/to/CoinGecko && .venv/bin/python -m app download --coin bitcoin  --date yesterday --database >> /var/log/coingecko.log 2>&1
+# 0 3 * * * cd /path/to/CoinGecko && .venv/bin/python -m app download --coin ethereum --date yesterday --database >> /var/log/coingecko.log 2>&1
+# 0 3 * * * cd /path/to/CoinGecko && .venv/bin/python -m app download --coin cardano  --date yesterday --database >> /var/log/coingecko.log 2>&1

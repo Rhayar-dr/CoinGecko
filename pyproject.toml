@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "coingecko-data-engineer"
+version = "1.0.0"
+description = "Small data engineering pipeline that collects CoinGecko historical crypto prices."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+dependencies = [
+    "requests>=2.31,<3",
+    "SQLAlchemy>=2.0,<3",
+    "psycopg2-binary>=2.9,<3",
+    "python-dotenv>=1.0,<2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4,<9", "black>=24.1", "ruff>=0.3"]
+
+[project.scripts]
+coingecko = "app.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# SQLAlchemy resolves Mapped[...] annotations at runtime; on Python 3.8/3.9 the
+# PEP 604 `X | None` form cannot be de-stringified, so keep Optional[...] here.
+"app/database/models.py" = ["UP007", "UP045"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

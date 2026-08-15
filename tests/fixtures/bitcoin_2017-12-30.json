@@ -1,0 +1,17 @@
+{
+  "id": "bitcoin",
+  "symbol": "btc",
+  "name": "Bitcoin",
+  "market_data": {
+    "current_price": {
+      "usd": 14156.6,
+      "eur": 11837.24
+    },
+    "market_cap": {
+      "usd": 237294009378.0
+    },
+    "total_volume": {
+      "usd": 12744953760.0
+    }
+  }
+}

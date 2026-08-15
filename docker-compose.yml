@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: coingecko_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-crypto}
+      POSTGRES_USER: ${POSTGRES_USER:-crypto_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Auto-create the schema on first boot.
+      - ./sql/001_create_tables.sql:/docker-entrypoint-initdb.d/001_create_tables.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crypto_user} -d ${POSTGRES_DB:-crypto}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: coingecko_app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Inside the compose network, reach Postgres by service name.
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-crypto}
+      POSTGRES_USER: ${POSTGRES_USER:-crypto_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      COINGECKO_API_KEY: ${COINGECKO_API_KEY:-}
+      COINGECKO_API_BASE_URL: ${COINGECKO_API_BASE_URL:-https://api.coingecko.com/api/v3}
+      COINGECKO_API_KEY_HEADER: ${COINGECKO_API_KEY_HEADER:-x-cg-demo-api-key}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      # Persist collected raw JSON on the host.
+      - ./data:/app/data
+    # Keep the container available for `docker compose run app <command>`.
+    # It idles until you invoke a CLI command.
+    command: ["--help"]
+
+volumes:
+  postgres_data:
